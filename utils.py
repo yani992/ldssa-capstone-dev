@@ -282,7 +282,10 @@ class Scaler(BaseEstimator, TransformerMixin):
         # Our ColumnSelector has a parameter columns.
         # The default value for columns is 'all'
         def __init__(self, method='minmax', columns=None):
-            self.method = method.lower()
+            self.method = method
+            valid_method = ['minmax', 'standard', None]
+            if self.method not in valid_method:
+                raise ValueError("Scaler() - Valid options for 'method' are {}. Got method={!r} instead.".format(valid_method, self.method))
             if self.method == 'minmax':
                 self.scaler = MinMaxScaler()
             if self.method == 'standard':

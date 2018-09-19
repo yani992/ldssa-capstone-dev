@@ -2,6 +2,7 @@ import string
 import numpy as np
 import pandas as pd
 
+# sklearn imports to create custom transformers
 from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
@@ -9,13 +10,16 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 #from nltk.corpus import stopwords
 from nltk.util import ngrams
 
+# SpaCy imports
 from spacy.lang.en import English
 import en_core_web_sm
 
+# Variable definitions
 nlp = en_core_web_sm.load()
 parser = English()
 #STOPLIST = set(stopwords.words('english'))
 SYMBOLS = " ".join(string.punctuation).split(" ") + ["-", "...", "”", "”"]
+
 
 class FeaturesEngineering(BaseEstimator, TransformerMixin):
     
@@ -289,7 +293,7 @@ class Scaler(BaseEstimator, TransformerMixin):
         # same interface. `fit` always returns the same object.
         def fit(self, X, y=None):
             # Fit the transformer and store it.
-            is self.scaler is None:
+            if self.scaler is None:
                 return self
             else:
                 if self.columns is None:
@@ -301,7 +305,7 @@ class Scaler(BaseEstimator, TransformerMixin):
         # Transform  return all columns is equal to 'all'.
         # If a column or a list of columns are passed, only those should be returned.
         def transform(self, X, *_):
-            is self.scaler is None:
+            if self.scaler is None:
                 return X
             else:
                 return pd.DataFrame(self.scaler.transform(X[self.columns]), columns=self.columns)

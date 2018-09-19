@@ -1,0 +1,12 @@
+scipy
+scikit-learn==0.19.2
+numpy
+pandas
+flask
+gunicorn==19.9.0
+peewee
+psycopg2
+category-encoders==1.2.6
+nltk
+spacy
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-1.2.0/en_core_web_sm-1.2.0.tar.gz

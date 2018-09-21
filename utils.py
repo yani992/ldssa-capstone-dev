@@ -40,11 +40,13 @@ class FeaturesEngineering(BaseEstimator, TransformerMixin):
 
     # All SciKit-Learn compatible transformers and classifiers have the
     # same interface. `fit` always returns the same object.
-    def fit(self, X, *_):
+    def fit(self, X, y):
         # Fit the transformer and store it.
+        if self.nlp is True:
+            self.test2class = self._text_to_class_map(X, y)
+            
         return self
-
-
+    
     def transform(self, X, y=None):
         X = X.copy()
         
@@ -73,7 +75,11 @@ class FeaturesEngineering(BaseEstimator, TransformerMixin):
             cols_names += s2.name
         
         if self.nlp is True:
-            df5 = self._nlp(X)
+            labels = ['text', 'class_1_pct']
+            text = self._assemble_text(X)
+            class_1_only = text.map(self.test2class).fillna(0.5)
+            df5 = pd.concat([text, class_1_only], axis=1)
+            df5.columns = labels
             list_of_series.append(df5)
             if isinstance(df5, pd.core.series.Series):
                 cols_names += df5.name
@@ -98,36 +104,6 @@ class FeaturesEngineering(BaseEstimator, TransformerMixin):
 
         return df
 
-    def _generic(self, df_):
-        df = df_.copy()
-        
-        df['n_factors'] = -df.isnull()[['other_factor_1', 'other_factor_2', 'other_factor_3']].sum(axis=1) + 3
-
-        return df
-        
-    def _nlp(self, df_):
-        df = df_.copy()
-        df_out = pd.DataFrame()
-        
-        text_columns = df.select_dtypes(include=['object']).columns
-        
-        ### Creating column with all available text (cleaned)
-        s = pd.Series('', index=df.index)
-        
-        for col in text_columns:
-            s += (' ' + df[col].fillna('').astype(str))
-        
-        df_out['text'] = s.apply(self._cleanText)
-        
-        ### Creating column with number of occurrences of the text
-        occurrences = s.value_counts()
-        df_out['occurrences'] = s.apply(lambda x: occurrences[x])
-        
-        ###
-        #df_out['ratio'] = self._10ratio(df_out)
-        
-        return df_out
-
     def _text_stats(self, series_):
             series = series_.copy()
 
@@ -139,6 +115,31 @@ class FeaturesEngineering(BaseEstimator, TransformerMixin):
                                  series.name + '_word_count': words_count,
                                  series.name + '_char_word_ratio':ratio})
         
+    def _text_to_class_map(self, X, y):
+        text = self._assemble_text(X)
+        #n_occurrence = text.value_counts()
+        #occurrences = text.apply(lambda x: n_occurrence[x])
+        temp = pd.concat([text, y], axis=1)
+        d = {key: (temp.loc[(temp[0]==key) & 
+                            (temp.target==1),
+                            'target']
+                       .sum() / temp[temp[0]==key].shape[0])
+             for key in text.unique()}
+        
+        return d
+        
+    def _assemble_text(self, df_):
+        df = df_.copy()    
+        text_columns = df.select_dtypes(include=['object']).columns
+        
+        ### Creating column with all available text (cleaned)
+        s = pd.Series('', index=df.index)
+        
+        for col in text_columns:
+            s += (' ' + df[col].fillna('').astype(str))
+        
+        return s.apply(self._cleanText)
+    
     def _process_attributes(self):
         series = X.person_attributes
         series = series.str.lower().fillna('unknown')
@@ -191,7 +192,7 @@ class FeaturesEngineering(BaseEstimator, TransformerMixin):
     
     def _age_binning(self, series_):
         series = series_.copy()
-        bins = [0, 15, 19, 24, 29, 34, 39, 44, 49, 54, 59, 64, 69, 74, 150]
+        bins = [-np.inf, 15, 19, 24, 29, 34, 39, 44, 49, 54, 59, 64, 69, 74, np.inf]
         labels = ['<16', '16-19', '20-24', '25-29', '30-34', '35-39', '40-44','45-49',
                   '50-54', '55-59','60-64', '65-69','70-74', '>74']
         return pd.cut(series, bins, labels=labels).astype('object')
@@ -224,23 +225,6 @@ class FeaturesEngineering(BaseEstimator, TransformerMixin):
         for item in list1:
             if item in list2:
                 return item
-    
-    def _uniques(self, df_, text_label, target_label, target_value):
-        df_ = df_.copy()
-        l =[]
-        for val in df_[text_label].unique():
-            a = df_[(df_[text_label] == val) & (df_[target_label] == true_class)]
-            l.append(a.shape[0])
-
-        return pd.Series(l, index=df_[text_label].unique())
-    
-    def _10ratio(self, df_):    
-        df_ = df_.copy()
-
-        L1 = self._uniques(df_, 'text', 'target', 1)
-        L0 = self._uniques(df_, 'text', 'target', 0)
-
-        return (df_.apply(lambda x: L0[x[0]], axis=1) / df.apply(lambda x: L1[x[0]], axis=1)).replace(0, 1)
 
 class NanImputer(BaseEstimator, TransformerMixin):
         def __init__(self, columns=None, dtype='number', categorical_feat=None, strategy='median', verbose=None):

@@ -1,1 +1,1 @@
-["age_in_years", "m_or_f", "other_factor_1", "other_factor_2", "other_factor_3", "other_person_location", "person_attributes", "seat"]
+["m_or_f", "person_attributes", "seat", "other_person_location", "other_factor_1", "other_factor_2", "other_factor_3", "age_in_years"]
